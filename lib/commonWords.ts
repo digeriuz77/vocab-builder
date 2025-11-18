@@ -194,7 +194,7 @@ export const getWordCountByCategory = (category: WordCategory): number => {
 export const isCommonWord = (word: string): boolean => {
   const lowerWord = word.toLowerCase();
   return Object.values(commonWords).some(categoryWords =>
-    categoryWords.includes(lowerWord as any)
+    (categoryWords as readonly string[]).includes(lowerWord)
   );
 };
 
@@ -204,7 +204,7 @@ export const isCommonWord = (word: string): boolean => {
 export const getWordCategory = (word: string): WordCategory | null => {
   const lowerWord = word.toLowerCase();
   for (const [category, words] of Object.entries(commonWords)) {
-    if (words.includes(lowerWord as any)) {
+    if ((words as readonly string[]).includes(lowerWord)) {
       return category as WordCategory;
     }
   }
