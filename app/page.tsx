@@ -4,10 +4,12 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { vocabularyData, type Stage, type VocabType, type VocabularyItem } from "@/lib/vocabularyData"
+import { vocabularyLevels, getCumulativeWordCount, getComprehensionMessage, getRecommendedLevel, type VocabType } from "@/lib/vocabularyLevels"
+import type { Stage, VocabularyItem } from "@/lib/vocabularyData"
 import { cn } from "@/lib/utils"
 
 export default function VocabularyMasteryGame() {
+  const [currentLevel, setCurrentLevel] = useState(1)
   const [currentVocabType, setCurrentVocabType] = useState<VocabType>("verbs")
   const [currentStage, setCurrentStage] = useState<Stage>(1)
   const [score, setScore] = useState(0)
@@ -15,6 +17,8 @@ export default function VocabularyMasteryGame() {
   const [feedbackMessage, setFeedbackMessage] = useState("")
   const [feedbackType, setFeedbackType] = useState<"correct" | "incorrect" | "">("")
   const [achievements, setAchievements] = useState<string[]>([])
+  const [completedLevels, setCompletedLevels] = useState<number[]>([])
+  const [showLevelSelect, setShowLevelSelect] = useState(true)
 
   // Stage 2 & 4: Quiz state
   const [quizOptions, setQuizOptions] = useState<string[]>([])
@@ -26,8 +30,26 @@ export default function VocabularyMasteryGame() {
   const [sentenceSlots, setSentenceSlots] = useState<Array<string | { type: "drop"; correctWord: string }>>([])
   const dropSlotRef = useRef<HTMLDivElement>(null) // Ref for the drop slot
 
-  const currentVocabList = vocabularyData[currentVocabType]
+  const currentLevelData = vocabularyLevels[currentLevel - 1]
+  const currentVocabList = currentLevelData[currentVocabType]
   const currentWord: VocabularyItem = currentVocabList[currentQuestionIndex % currentVocabList.length]
+
+  // Load completed levels from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('completedLevels')
+    if (saved) {
+      setCompletedLevels(JSON.parse(saved))
+    }
+  }, [])
+
+  // Save completed levels to localStorage
+  const markLevelComplete = useCallback((level: number) => {
+    setCompletedLevels(prev => {
+      const updated = [...new Set([...prev, level])]
+      localStorage.setItem('completedLevels', JSON.stringify(updated))
+      return updated
+    })
+  }, [])
 
   const showFeedback = useCallback((message: string, type: "correct" | "incorrect") => {
     setFeedbackMessage(message)
@@ -65,9 +87,10 @@ export default function VocabularyMasteryGame() {
     } else if (currentStage === 4) {
       // Move to completion screen after stage 4
       setCurrentStage(5 as Stage)
+      markLevelComplete(currentLevel)
       showFeedback("🎉 Congratulations! You've completed all vocabulary stages!", "correct")
     }
-  }, [currentStage, showFeedback])
+  }, [currentStage, currentLevel, markLevelComplete, showFeedback])
 
   // --- Stage 1: Flip Cards ---
   const loadStage1 = useCallback(() => {
@@ -81,7 +104,7 @@ export default function VocabularyMasteryGame() {
   }, [])
 
   const showQuizQuestion = useCallback(() => {
-    const vocab = vocabularyData[currentVocabType]
+    const vocab = currentLevelData[currentVocabType]
     if (currentQuestionIndex >= vocab.length) {
       nextStage()
       return
@@ -104,10 +127,10 @@ export default function VocabularyMasteryGame() {
     setShowQuizSubmit(false)
     setFeedbackMessage("")
     setFeedbackType("")
-  }, [currentQuestionIndex, currentVocabType, nextStage])
+  }, [currentQuestionIndex, currentVocabType, currentLevelData, nextStage])
 
   const checkQuizAnswer = useCallback(() => {
-    const vocab = vocabularyData[currentVocabType]
+    const vocab = currentLevelData[currentVocabType]
     const correctAnswer = vocab[currentQuestionIndex].meaning
 
     if (selectedOption === correctAnswer) {
@@ -120,7 +143,7 @@ export default function VocabularyMasteryGame() {
     setTimeout(() => {
       setCurrentQuestionIndex((prev) => prev + 1)
     }, 2000)
-  }, [currentQuestionIndex, currentVocabType, selectedOption, showFeedback])
+  }, [currentQuestionIndex, currentVocabType, currentLevelData, selectedOption, showFeedback])
 
   // --- Stage 3: Sentence Building (Drag & Drop) ---
   const loadStage3 = useCallback(() => {
@@ -129,7 +152,7 @@ export default function VocabularyMasteryGame() {
   }, [])
 
   const showSentenceQuestion = useCallback(() => {
-    const vocab = vocabularyData[currentVocabType]
+    const vocab = currentLevelData[currentVocabType]
     if (currentQuestionIndex >= vocab.length) {
       nextStage()
       return
@@ -158,7 +181,7 @@ export default function VocabularyMasteryGame() {
     setSentenceSlots(sentenceStructure)
     setFeedbackMessage("")
     setFeedbackType("")
-  }, [currentQuestionIndex, currentVocabType, nextStage])
+  }, [currentQuestionIndex, currentVocabType, currentLevelData, nextStage])
 
   const handleDragStart = (e: DragEvent<HTMLDivElement>, word: string) => {
     e.dataTransfer.setData("text/plain", word)
@@ -242,7 +265,7 @@ export default function VocabularyMasteryGame() {
 
   const showSwapQuestion = useCallback(() => {
     // Use current vocab type for Stage 4
-    const vocab = vocabularyData[currentVocabType]
+    const vocab = currentLevelData[currentVocabType]
     if (currentQuestionIndex >= vocab.length) {
       nextStage()
       return
@@ -265,11 +288,11 @@ export default function VocabularyMasteryGame() {
     setShowQuizSubmit(false)
     setFeedbackMessage("")
     setFeedbackType("")
-  }, [currentQuestionIndex, currentVocabType, nextStage])
+  }, [currentQuestionIndex, currentVocabType, currentLevelData, nextStage])
 
   const checkSwapAnswer = useCallback(() => {
     // Use current vocab type for Stage 4
-    const vocab = vocabularyData[currentVocabType]
+    const vocab = currentLevelData[currentVocabType]
     const correctAnswer = vocab[currentQuestionIndex].word
 
     if (selectedOption === correctAnswer) {
@@ -282,7 +305,7 @@ export default function VocabularyMasteryGame() {
     setTimeout(() => {
       setCurrentQuestionIndex((prev) => prev + 1)
     }, 2000)
-  }, [currentQuestionIndex, currentVocabType, selectedOption, showFeedback])
+  }, [currentQuestionIndex, currentVocabType, currentLevelData, selectedOption, showFeedback])
 
   const stageNames: { [key in Stage]: string } = {
     1: "Stage 1: Memory Cards - Learn the Words!",
@@ -354,11 +377,100 @@ export default function VocabularyMasteryGame() {
       <div className="container mx-auto max-w-6xl overflow-hidden rounded-[20px] bg-white shadow-2xl">
         <header className="bg-gradient-to-br from-[#ff6b6b] to-[#feca57] p-8 text-center text-white">
           <h1 className="mb-2 text-4xl font-bold">🎯 Vocabulary Mastery Journey</h1>
-          <p className="text-lg opacity-90">Master vocabulary through 5 exciting challenges!</p>
+          <p className="text-lg opacity-90">Master 1000 essential English words across 12 levels!</p>
         </header>
 
         <main className="p-8">
+          {showLevelSelect ? (
+            <div className="level-selection">
+              <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">Choose Your Level</h2>
+
+              {/* Progress Stats */}
+              {completedLevels.length > 0 && (
+                <Card className="mb-8 p-6 bg-gradient-to-br from-green-50 to-blue-50 border-2 border-green-200">
+                  <h3 className="text-2xl font-bold text-green-800 mb-4">📊 Your Progress</h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="p-4 bg-white rounded-lg shadow-sm">
+                      <div className="text-sm text-gray-600">Levels Completed</div>
+                      <div className="text-3xl font-bold text-purple-600">{completedLevels.length}/12</div>
+                    </div>
+                    <div className="p-4 bg-white rounded-lg shadow-sm">
+                      <div className="text-sm text-gray-600">Words Mastered</div>
+                      <div className="text-3xl font-bold text-blue-600">
+                        {getCumulativeWordCount(Math.max(...completedLevels))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 p-4 bg-white rounded-lg">
+                    <p className="text-lg text-gray-700">
+                      {getComprehensionMessage(getCumulativeWordCount(Math.max(...completedLevels)))}
+                    </p>
+                  </div>
+                </Card>
+              )}
+
+              {/* Level Grid */}
+              <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
+                {vocabularyLevels.map((level) => (
+                  <Card
+                    key={level.level}
+                    className={cn(
+                      "p-6 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105",
+                      completedLevels.includes(level.level)
+                        ? "bg-gradient-to-br from-green-100 to-green-50 border-2 border-green-500"
+                        : "bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200",
+                      level.level === getRecommendedLevel(completedLevels) && "ring-4 ring-yellow-400"
+                    )}
+                    onClick={() => {
+                      setCurrentLevel(level.level)
+                      setShowLevelSelect(false)
+                      setCurrentStage(1)
+                      setCurrentQuestionIndex(0)
+                      setScore(0)
+                    }}
+                  >
+                    <div className="text-center">
+                      <div className="text-sm font-bold text-gray-600 mb-2">
+                        {completedLevels.includes(level.level) ? "✅ Completed" : ""}
+                        {level.level === getRecommendedLevel(completedLevels) && !completedLevels.includes(level.level) ? "⭐ Recommended" : ""}
+                      </div>
+                      <h3 className="text-2xl font-bold text-purple-700 mb-2">Level {level.level}</h3>
+                      <p className="text-sm text-gray-600 mb-3">{level.description}</p>
+                      <div className="text-xs text-gray-500">{level.totalWords} words</div>
+                      <div className="mt-3 text-xs text-gray-500">
+                        {getCumulativeWordCount(level.level - 1) + 1}-{getCumulativeWordCount(level.level)} total
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Info Section */}
+              <Card className="mt-8 p-6 bg-gradient-to-br from-blue-50 to-purple-50">
+                <h3 className="text-xl font-bold text-gray-800 mb-3">💡 Did You Know?</h3>
+                <ul className="space-y-2 text-gray-700">
+                  <li>• The first 100 words make up about <strong>half</strong> of all written material</li>
+                  <li>• The first 300 words account for approximately <strong>65%</strong> of written text</li>
+                  <li>• Learning 800-1,000 words enables understanding <strong>75%</strong> of spoken English</li>
+                  <li>• Mastering these words is fundamental for literacy and communication!</li>
+                </ul>
+              </Card>
+            </div>
+          ) : (
+            <div className="game-content">
           <div className="controls mb-8 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={() => setShowLevelSelect(true)}
+                variant="outline"
+                className="rounded-full px-4 py-2 font-bold"
+              >
+                ← Back to Levels
+              </Button>
+              <div className="text-lg font-bold text-purple-700">
+                Level {currentLevel}: {currentLevelData.description}
+              </div>
+            </div>
             <div className="vocab-type-selector flex flex-wrap items-center gap-2">
               <span className="font-bold">Part of Speech:</span>
               {["verbs", "adjectives", "nouns", "adverbs"].map((type) => (
@@ -557,9 +669,9 @@ export default function VocabularyMasteryGame() {
                     <strong>Original:</strong>
                   </div>
                   <div className="text-lg text-gray-600 mb-4">
-                    {vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length].sentenceTemplate
+                    {currentLevelData[currentVocabType][currentQuestionIndex % currentLevelData[currentVocabType].length].sentenceTemplate
                       ?.split(
-                        vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length].swapFrom || "",
+                        currentLevelData[currentVocabType][currentQuestionIndex % currentLevelData[currentVocabType].length].swapFrom || "",
                       )
                       .map((part, index, array) => (
                         <span key={index}>
@@ -567,7 +679,7 @@ export default function VocabularyMasteryGame() {
                           {index < array.length - 1 && (
                             <span className="underline bg-yellow-200 px-1 font-bold text-red-600">
                               {
-                                vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length]
+                                currentLevelData[currentVocabType][currentQuestionIndex % currentLevelData[currentVocabType].length]
                                   .swapFrom
                               }
                             </span>
@@ -592,12 +704,12 @@ export default function VocabularyMasteryGame() {
                           : "bg-white text-gray-800 border-gray-300",
                         feedbackType === "correct" &&
                           option ===
-                            vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length].word &&
+                            currentLevelData[currentVocabType][currentQuestionIndex % currentLevelData[currentVocabType].length].word &&
                           "bg-[#4CAF50] text-white",
                         feedbackType === "incorrect" &&
                           option === selectedOption &&
                           option !==
-                            vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length].word &&
+                            currentLevelData[currentVocabType][currentQuestionIndex % currentLevelData[currentVocabType].length].word &&
                           "bg-[#f44336] text-white",
                       )}
                       disabled={!!feedbackMessage}
@@ -621,14 +733,14 @@ export default function VocabularyMasteryGame() {
                   <div className="mt-4 p-4 bg-green-100 rounded-lg border border-green-300">
                     <div className="text-green-800 font-bold mb-2">✅ Perfect! Here's the improved sentence:</div>
                     <div className="text-lg text-green-700">
-                      {vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length]
+                      {currentLevelData[currentVocabType][currentQuestionIndex % currentLevelData[currentVocabType].length]
                         .sentenceAnswer ||
-                        vocabularyData[currentVocabType][
-                          currentQuestionIndex % vocabularyData[currentVocabType].length
+                        currentLevelData[currentVocabType][
+                          currentQuestionIndex % currentLevelData[currentVocabType].length
                         ].sentenceTemplate?.replace(
-                          vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length].swapFrom ||
+                          currentLevelData[currentVocabType][currentQuestionIndex % currentLevelData[currentVocabType].length].swapFrom ||
                             "",
-                          vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length].word,
+                          currentLevelData[currentVocabType][currentQuestionIndex % currentLevelData[currentVocabType].length].word,
                         )}
                     </div>
                   </div>
@@ -688,18 +800,28 @@ export default function VocabularyMasteryGame() {
                     </Button>
                   </a>
 
-                  <div className="mt-6">
+                  <div className="mt-6 flex gap-4 justify-center">
+                    <Button
+                      onClick={() => setShowLevelSelect(true)}
+                      className="rounded-full px-8 py-4 font-bold bg-gradient-to-br from-purple-600 to-blue-600 text-white text-lg"
+                    >
+                      📚 Choose Next Level
+                    </Button>
                     <Button
                       onClick={resetGame}
                       variant="outline"
                       className="rounded-full px-6 py-3 font-bold text-gray-600 border-gray-300 hover:bg-gray-100 bg-transparent"
                     >
-                      🔄 Play Again
+                      🔄 Replay This Level
                     </Button>
                   </div>
                 </div>
               </Card>
             </div>
+          )}
+
+          {/* Close game-content div */}
+          </div>
           )}
 
           <div id="achievements" className="achievements mt-5 flex flex-wrap gap-2">
