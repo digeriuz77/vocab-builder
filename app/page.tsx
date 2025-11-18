@@ -8,7 +8,7 @@ import { vocabularyData, type Stage, type VocabType, type VocabularyItem } from 
 import { cn } from "@/lib/utils"
 
 export default function VocabularyMasteryGame() {
-  const [currentVocabType, setCurrentVocabType] = useState<VocabType>("descriptive")
+  const [currentVocabType, setCurrentVocabType] = useState<VocabType>("verbs")
   const [currentStage, setCurrentStage] = useState<Stage>(1)
   const [score, setScore] = useState(0)
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
@@ -190,21 +190,34 @@ export default function VocabularyMasteryGame() {
 
   const checkSentence = useCallback(() => {
     let correct = true
-    let droppedWord = ""
     let correctWord = ""
 
-    sentenceSlots.forEach((slot) => {
-      if (typeof slot === "string") {
-        // Fixed word, ignore
-      } else {
-        // This is a drop slot
-        droppedWord = slot as string // The dropped word is now a string in the array
-        correctWord = slot.correctWord // The original correct word is in the object
-        if (droppedWord.toLowerCase() !== correctWord.toLowerCase()) {
-          correct = false
-        }
+    // Build the complete sentence structure with original drop slot info
+    const originalStructure = currentWord.examples[0].split(" ")
+    let dropSlotIndex = -1
+
+    // Find which slot is the drop zone
+    sentenceSlots.forEach((slot, index) => {
+      if (typeof slot === "object" && slot.type === "drop") {
+        dropSlotIndex = index
+        correctWord = slot.correctWord
       }
     })
+
+    // Check if a word was dropped in the correct slot
+    if (dropSlotIndex >= 0) {
+      const droppedSlot = sentenceSlots[dropSlotIndex]
+      if (typeof droppedSlot === "string") {
+        // A word was dropped, check if it's correct
+        if (droppedSlot.toLowerCase() !== correctWord.toLowerCase()) {
+          correct = false
+        }
+      } else {
+        // No word dropped yet
+        correct = false
+        correctWord = droppedSlot.correctWord
+      }
+    }
 
     if (correct) {
       setScore((prev) => prev + 30)
@@ -216,10 +229,10 @@ export default function VocabularyMasteryGame() {
       showFeedback(`❌ Not quite. Try again! The correct word was "${correctWord}".`, "incorrect")
       // Reset the slot if incorrect
       setSentenceSlots((prevSlots) =>
-        prevSlots.map((slot) => (typeof slot === "object" ? { type: "drop", correctWord: slot.correctWord } : slot)),
+        prevSlots.map((slot) => (typeof slot === "object" && slot.type === "drop" ? { type: "drop", correctWord: slot.correctWord } : slot)),
       )
     }
-  }, [sentenceSlots, showFeedback])
+  }, [sentenceSlots, currentWord, showFeedback])
 
   // --- Stage 4: Word Swap ---
   const loadStage4 = useCallback(() => {
@@ -228,8 +241,8 @@ export default function VocabularyMasteryGame() {
   }, [])
 
   const showSwapQuestion = useCallback(() => {
-    // Always use character words for Stage 4, regardless of current vocab type
-    const vocab = vocabularyData.character
+    // Use current vocab type for Stage 4
+    const vocab = vocabularyData[currentVocabType]
     if (currentQuestionIndex >= vocab.length) {
       nextStage()
       return
@@ -237,7 +250,7 @@ export default function VocabularyMasteryGame() {
 
     const word = vocab[currentQuestionIndex]
 
-    // Get all other character vocabulary items and shuffle them
+    // Get all other vocabulary items and shuffle them
     const otherWords = vocab.filter((w) => w.word !== word.word)
     const shuffledOthers = otherWords.sort(() => Math.random() - 0.5)
 
@@ -252,11 +265,11 @@ export default function VocabularyMasteryGame() {
     setShowQuizSubmit(false)
     setFeedbackMessage("")
     setFeedbackType("")
-  }, [currentQuestionIndex, nextStage])
+  }, [currentQuestionIndex, currentVocabType, nextStage])
 
   const checkSwapAnswer = useCallback(() => {
-    // Always use character words for Stage 4
-    const vocab = vocabularyData.character
+    // Use current vocab type for Stage 4
+    const vocab = vocabularyData[currentVocabType]
     const correctAnswer = vocab[currentQuestionIndex].word
 
     if (selectedOption === correctAnswer) {
@@ -269,7 +282,7 @@ export default function VocabularyMasteryGame() {
     setTimeout(() => {
       setCurrentQuestionIndex((prev) => prev + 1)
     }, 2000)
-  }, [currentQuestionIndex, selectedOption, showFeedback])
+  }, [currentQuestionIndex, currentVocabType, selectedOption, showFeedback])
 
   const stageNames: { [key in Stage]: string } = {
     1: "Stage 1: Memory Cards - Learn the Words!",
@@ -346,9 +359,9 @@ export default function VocabularyMasteryGame() {
 
         <main className="p-8">
           <div className="controls mb-8 flex flex-wrap items-center justify-between gap-4">
-            <div className="vocab-type-selector flex items-center gap-2">
-              <span className="font-bold">Vocabulary Set:</span>
-              {["descriptive", "character"].map((type) => (
+            <div className="vocab-type-selector flex flex-wrap items-center gap-2">
+              <span className="font-bold">Part of Speech:</span>
+              {["verbs", "adjectives", "nouns", "adverbs"].map((type) => (
                 <Button
                   key={type}
                   onClick={() => setCurrentVocabType(type as VocabType)}
@@ -359,7 +372,7 @@ export default function VocabularyMasteryGame() {
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200",
                   )}
                 >
-                  {type.charAt(0).toUpperCase() + type.slice(1)} Words
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
                 </Button>
               ))}
             </div>
@@ -544,9 +557,9 @@ export default function VocabularyMasteryGame() {
                     <strong>Original:</strong>
                   </div>
                   <div className="text-lg text-gray-600 mb-4">
-                    {vocabularyData.character[currentQuestionIndex % vocabularyData.character.length].sentenceTemplate
+                    {vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length].sentenceTemplate
                       ?.split(
-                        vocabularyData.character[currentQuestionIndex % vocabularyData.character.length].swapFrom || "",
+                        vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length].swapFrom || "",
                       )
                       .map((part, index, array) => (
                         <span key={index}>
@@ -554,7 +567,7 @@ export default function VocabularyMasteryGame() {
                           {index < array.length - 1 && (
                             <span className="underline bg-yellow-200 px-1 font-bold text-red-600">
                               {
-                                vocabularyData.character[currentQuestionIndex % vocabularyData.character.length]
+                                vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length]
                                   .swapFrom
                               }
                             </span>
@@ -579,12 +592,12 @@ export default function VocabularyMasteryGame() {
                           : "bg-white text-gray-800 border-gray-300",
                         feedbackType === "correct" &&
                           option ===
-                            vocabularyData.character[currentQuestionIndex % vocabularyData.character.length].word &&
+                            vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length].word &&
                           "bg-[#4CAF50] text-white",
                         feedbackType === "incorrect" &&
                           option === selectedOption &&
                           option !==
-                            vocabularyData.character[currentQuestionIndex % vocabularyData.character.length].word &&
+                            vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length].word &&
                           "bg-[#f44336] text-white",
                       )}
                       disabled={!!feedbackMessage}
@@ -608,14 +621,14 @@ export default function VocabularyMasteryGame() {
                   <div className="mt-4 p-4 bg-green-100 rounded-lg border border-green-300">
                     <div className="text-green-800 font-bold mb-2">✅ Perfect! Here's the improved sentence:</div>
                     <div className="text-lg text-green-700">
-                      {vocabularyData.character[currentQuestionIndex % vocabularyData.character.length]
+                      {vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length]
                         .sentenceAnswer ||
-                        vocabularyData.character[
-                          currentQuestionIndex % vocabularyData.character.length
+                        vocabularyData[currentVocabType][
+                          currentQuestionIndex % vocabularyData[currentVocabType].length
                         ].sentenceTemplate?.replace(
-                          vocabularyData.character[currentQuestionIndex % vocabularyData.character.length].swapFrom ||
+                          vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length].swapFrom ||
                             "",
-                          vocabularyData.character[currentQuestionIndex % vocabularyData.character.length].word,
+                          vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length].word,
                         )}
                     </div>
                   </div>
