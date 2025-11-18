@@ -4,10 +4,12 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { vocabularyData, type Stage, type VocabType, type VocabularyItem } from "@/lib/vocabularyData"
+import { vocabularyLevels, getCumulativeWordCount, getComprehensionMessage, getRecommendedLevel, type VocabType } from "@/lib/vocabularyLevels"
+import type { Stage, VocabularyItem } from "@/lib/vocabularyData"
 import { cn } from "@/lib/utils"
 
 export default function VocabularyMasteryGame() {
+  const [currentLevel, setCurrentLevel] = useState(1)
   const [currentVocabType, setCurrentVocabType] = useState<VocabType>("verbs")
   const [currentStage, setCurrentStage] = useState<Stage>(1)
   const [score, setScore] = useState(0)
@@ -15,6 +17,12 @@ export default function VocabularyMasteryGame() {
   const [feedbackMessage, setFeedbackMessage] = useState("")
   const [feedbackType, setFeedbackType] = useState<"correct" | "incorrect" | "">("")
   const [achievements, setAchievements] = useState<string[]>([])
+  const [completedLevels, setCompletedLevels] = useState<number[]>([])
+  const [showLevelSelect, setShowLevelSelect] = useState(true)
+  const [showPerformance, setShowPerformance] = useState(false)
+  const [showTeacherMaterials, setShowTeacherMaterials] = useState(false)
+  const [teacherPassword, setTeacherPassword] = useState("")
+  const [isTeacherAuthenticated, setIsTeacherAuthenticated] = useState(false)
 
   // Stage 2 & 4: Quiz state
   const [quizOptions, setQuizOptions] = useState<string[]>([])
@@ -26,8 +34,26 @@ export default function VocabularyMasteryGame() {
   const [sentenceSlots, setSentenceSlots] = useState<Array<string | { type: "drop"; correctWord: string }>>([])
   const dropSlotRef = useRef<HTMLDivElement>(null) // Ref for the drop slot
 
-  const currentVocabList = vocabularyData[currentVocabType]
+  const currentLevelData = vocabularyLevels[currentLevel - 1]
+  const currentVocabList = currentLevelData[currentVocabType]
   const currentWord: VocabularyItem = currentVocabList[currentQuestionIndex % currentVocabList.length]
+
+  // Load completed levels from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('completedLevels')
+    if (saved) {
+      setCompletedLevels(JSON.parse(saved))
+    }
+  }, [])
+
+  // Save completed levels to localStorage
+  const markLevelComplete = useCallback((level: number) => {
+    setCompletedLevels(prev => {
+      const updated = [...new Set([...prev, level])]
+      localStorage.setItem('completedLevels', JSON.stringify(updated))
+      return updated
+    })
+  }, [])
 
   const showFeedback = useCallback((message: string, type: "correct" | "incorrect") => {
     setFeedbackMessage(message)
@@ -65,9 +91,10 @@ export default function VocabularyMasteryGame() {
     } else if (currentStage === 4) {
       // Move to completion screen after stage 4
       setCurrentStage(5 as Stage)
+      markLevelComplete(currentLevel)
       showFeedback("🎉 Congratulations! You've completed all vocabulary stages!", "correct")
     }
-  }, [currentStage, showFeedback])
+  }, [currentStage, currentLevel, markLevelComplete, showFeedback])
 
   // --- Stage 1: Flip Cards ---
   const loadStage1 = useCallback(() => {
@@ -81,7 +108,7 @@ export default function VocabularyMasteryGame() {
   }, [])
 
   const showQuizQuestion = useCallback(() => {
-    const vocab = vocabularyData[currentVocabType]
+    const vocab = currentLevelData[currentVocabType]
     if (currentQuestionIndex >= vocab.length) {
       nextStage()
       return
@@ -104,10 +131,10 @@ export default function VocabularyMasteryGame() {
     setShowQuizSubmit(false)
     setFeedbackMessage("")
     setFeedbackType("")
-  }, [currentQuestionIndex, currentVocabType, nextStage])
+  }, [currentQuestionIndex, currentVocabType, currentLevelData, nextStage])
 
   const checkQuizAnswer = useCallback(() => {
-    const vocab = vocabularyData[currentVocabType]
+    const vocab = currentLevelData[currentVocabType]
     const correctAnswer = vocab[currentQuestionIndex].meaning
 
     if (selectedOption === correctAnswer) {
@@ -120,7 +147,7 @@ export default function VocabularyMasteryGame() {
     setTimeout(() => {
       setCurrentQuestionIndex((prev) => prev + 1)
     }, 2000)
-  }, [currentQuestionIndex, currentVocabType, selectedOption, showFeedback])
+  }, [currentQuestionIndex, currentVocabType, currentLevelData, selectedOption, showFeedback])
 
   // --- Stage 3: Sentence Building (Drag & Drop) ---
   const loadStage3 = useCallback(() => {
@@ -129,7 +156,7 @@ export default function VocabularyMasteryGame() {
   }, [])
 
   const showSentenceQuestion = useCallback(() => {
-    const vocab = vocabularyData[currentVocabType]
+    const vocab = currentLevelData[currentVocabType]
     if (currentQuestionIndex >= vocab.length) {
       nextStage()
       return
@@ -158,7 +185,7 @@ export default function VocabularyMasteryGame() {
     setSentenceSlots(sentenceStructure)
     setFeedbackMessage("")
     setFeedbackType("")
-  }, [currentQuestionIndex, currentVocabType, nextStage])
+  }, [currentQuestionIndex, currentVocabType, currentLevelData, nextStage])
 
   const handleDragStart = (e: DragEvent<HTMLDivElement>, word: string) => {
     e.dataTransfer.setData("text/plain", word)
@@ -242,7 +269,7 @@ export default function VocabularyMasteryGame() {
 
   const showSwapQuestion = useCallback(() => {
     // Use current vocab type for Stage 4
-    const vocab = vocabularyData[currentVocabType]
+    const vocab = currentLevelData[currentVocabType]
     if (currentQuestionIndex >= vocab.length) {
       nextStage()
       return
@@ -265,11 +292,11 @@ export default function VocabularyMasteryGame() {
     setShowQuizSubmit(false)
     setFeedbackMessage("")
     setFeedbackType("")
-  }, [currentQuestionIndex, currentVocabType, nextStage])
+  }, [currentQuestionIndex, currentVocabType, currentLevelData, nextStage])
 
   const checkSwapAnswer = useCallback(() => {
     // Use current vocab type for Stage 4
-    const vocab = vocabularyData[currentVocabType]
+    const vocab = currentLevelData[currentVocabType]
     const correctAnswer = vocab[currentQuestionIndex].word
 
     if (selectedOption === correctAnswer) {
@@ -282,7 +309,7 @@ export default function VocabularyMasteryGame() {
     setTimeout(() => {
       setCurrentQuestionIndex((prev) => prev + 1)
     }, 2000)
-  }, [currentQuestionIndex, currentVocabType, selectedOption, showFeedback])
+  }, [currentQuestionIndex, currentVocabType, currentLevelData, selectedOption, showFeedback])
 
   const stageNames: { [key in Stage]: string } = {
     1: "Stage 1: Memory Cards - Learn the Words!",
@@ -350,23 +377,128 @@ export default function VocabularyMasteryGame() {
   }, [currentQuestionIndex, currentStage, showSwapQuestion])
 
   return (
-    <div className="min-h-screen p-5 bg-gradient-to-br from-[#667eea] to-[#764ba2]">
-      <div className="container mx-auto max-w-6xl overflow-hidden rounded-[20px] bg-white shadow-2xl">
-        <header className="bg-gradient-to-br from-[#ff6b6b] to-[#feca57] p-8 text-center text-white">
-          <h1 className="mb-2 text-4xl font-bold">🎯 Vocabulary Mastery Journey</h1>
-          <p className="text-lg opacity-90">Master vocabulary through 5 exciting challenges!</p>
+    <div className="min-h-screen p-2 sm:p-5 bg-gradient-to-br from-[#667eea] to-[#764ba2]">
+      <div className="container mx-auto max-w-6xl overflow-hidden rounded-lg sm:rounded-[20px] bg-white shadow-2xl">
+        <header className="bg-gradient-to-br from-[#ff6b6b] to-[#feca57] p-4 sm:p-8 text-center text-white">
+          <h1 className="mb-2 text-2xl sm:text-4xl font-bold">🎯 Vocabulary Mastery Journey</h1>
+          <p className="text-sm sm:text-lg opacity-90">Master 1000 essential English words across 12 levels!</p>
         </header>
 
-        <main className="p-8">
-          <div className="controls mb-8 flex flex-wrap items-center justify-between gap-4">
-            <div className="vocab-type-selector flex flex-wrap items-center gap-2">
-              <span className="font-bold">Part of Speech:</span>
+        <main className="p-4 sm:p-8">
+          {showLevelSelect ? (
+            <div className="level-selection">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-6 text-center">Choose Your Level</h2>
+
+              {/* Progress Stats */}
+              {completedLevels.length > 0 && (
+                <Card className="mb-8 p-6 bg-gradient-to-br from-green-50 to-blue-50 border-2 border-green-200">
+                  <h3 className="text-2xl font-bold text-green-800 mb-4">📊 Your Progress</h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="p-4 bg-white rounded-lg shadow-sm">
+                      <div className="text-sm text-gray-600">Levels Completed</div>
+                      <div className="text-3xl font-bold text-purple-600">{completedLevels.length}/12</div>
+                    </div>
+                    <div className="p-4 bg-white rounded-lg shadow-sm">
+                      <div className="text-sm text-gray-600">Words Mastered</div>
+                      <div className="text-3xl font-bold text-blue-600">
+                        {getCumulativeWordCount(Math.max(...completedLevels))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 p-4 bg-white rounded-lg">
+                    <p className="text-lg text-gray-700">
+                      {getComprehensionMessage(getCumulativeWordCount(Math.max(...completedLevels)))}
+                    </p>
+                  </div>
+                </Card>
+              )}
+
+              {/* Level Grid */}
+              <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+                {vocabularyLevels.map((level) => (
+                  <Card
+                    key={level.level}
+                    className={cn(
+                      "p-6 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105",
+                      completedLevels.includes(level.level)
+                        ? "bg-gradient-to-br from-green-100 to-green-50 border-2 border-green-500"
+                        : "bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200",
+                      level.level === getRecommendedLevel(completedLevels) && "ring-4 ring-yellow-400"
+                    )}
+                    onClick={() => {
+                      setCurrentLevel(level.level)
+                      setShowLevelSelect(false)
+                      setCurrentStage(1)
+                      setCurrentQuestionIndex(0)
+                      setScore(0)
+                    }}
+                  >
+                    <div className="text-center">
+                      <div className="text-sm font-bold text-gray-600 mb-2">
+                        {completedLevels.includes(level.level) ? "✅ Completed" : ""}
+                        {level.level === getRecommendedLevel(completedLevels) && !completedLevels.includes(level.level) ? "⭐ Recommended" : ""}
+                      </div>
+                      <h3 className="text-2xl font-bold text-purple-700 mb-2">Level {level.level}</h3>
+                      <p className="text-sm text-gray-600 mb-3">{level.description}</p>
+                      <div className="text-xs text-gray-500">{level.totalWords} words</div>
+                      <div className="mt-3 text-xs text-gray-500">
+                        {getCumulativeWordCount(level.level - 1) + 1}-{getCumulativeWordCount(level.level)} total
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Info Section */}
+              <Card className="mt-8 p-6 bg-gradient-to-br from-blue-50 to-purple-50">
+                <h3 className="text-xl font-bold text-gray-800 mb-3">💡 Did You Know?</h3>
+                <ul className="space-y-2 text-gray-700">
+                  <li>• The first 100 words make up about <strong>half</strong> of all written material</li>
+                  <li>• The first 300 words account for approximately <strong>65%</strong> of written text</li>
+                  <li>• Learning 800-1,000 words enables understanding <strong>75%</strong> of spoken English</li>
+                  <li>• Mastering these words is fundamental for literacy and communication!</li>
+                </ul>
+              </Card>
+
+              {/* Action Buttons */}
+              <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
+                <Button
+                  onClick={() => setShowPerformance(true)}
+                  className="rounded-full px-6 py-3 font-bold bg-gradient-to-br from-green-600 to-teal-600 text-white text-lg"
+                >
+                  📊 How are we doing?
+                </Button>
+                <Button
+                  onClick={() => setShowTeacherMaterials(true)}
+                  className="rounded-full px-6 py-3 font-bold bg-gradient-to-br from-orange-600 to-red-600 text-white text-lg"
+                >
+                  📚 Teacher Materials
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="game-content">
+          <div className="controls mb-4 sm:mb-8 flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+              <Button
+                onClick={() => setShowLevelSelect(true)}
+                variant="outline"
+                className="rounded-full px-3 sm:px-4 py-2 font-bold text-sm sm:text-base"
+              >
+                ← Levels
+              </Button>
+              <div className="text-sm sm:text-lg font-bold text-purple-700">
+                Level {currentLevel}: <span className="hidden sm:inline">{currentLevelData.description}</span>
+              </div>
+            </div>
+            <div className="vocab-type-selector flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <span className="font-bold text-sm sm:text-base">Part of Speech:</span>
               {["verbs", "adjectives", "nouns", "adverbs"].map((type) => (
                 <Button
                   key={type}
                   onClick={() => setCurrentVocabType(type as VocabType)}
                   className={cn(
-                    "rounded-full px-5 py-2 font-bold transition-all duration-300",
+                    "rounded-full px-3 sm:px-5 py-1.5 sm:py-2 font-bold transition-all duration-300 text-xs sm:text-base",
                     currentVocabType === type
                       ? "bg-[#2196F3] text-white hover:bg-[#1976D2] scale-105"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200",
@@ -376,7 +508,7 @@ export default function VocabularyMasteryGame() {
                 </Button>
               ))}
             </div>
-            <div className="score-board rounded-xl bg-gradient-to-br from-[#667eea] to-[#764ba2] px-6 py-3 font-bold text-lg text-white">
+            <div className="score-board rounded-xl bg-gradient-to-br from-[#667eea] to-[#764ba2] px-4 sm:px-6 py-2 sm:py-3 font-bold text-sm sm:text-lg text-white w-full sm:w-auto text-center">
               Score: <span id="score">{score}</span> | Stage: <span id="currentStage">{currentStage}</span>/4
             </div>
           </div>
@@ -389,7 +521,7 @@ export default function VocabularyMasteryGame() {
           {/* Stage 1: Flip Cards */}
           {currentStage === 1 && (
             <div id="stage1" className="stage-content">
-              <div className="flip-card-container grid gap-5 grid-cols-[repeat(auto-fit,minmax(300px,1fr))]">
+              <div className="flip-card-container grid gap-3 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {currentVocabList.map((word, index) => (
                   <FlipCard key={index} wordData={word} />
                 ))}
@@ -557,9 +689,9 @@ export default function VocabularyMasteryGame() {
                     <strong>Original:</strong>
                   </div>
                   <div className="text-lg text-gray-600 mb-4">
-                    {vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length].sentenceTemplate
+                    {currentLevelData[currentVocabType][currentQuestionIndex % currentLevelData[currentVocabType].length].sentenceTemplate
                       ?.split(
-                        vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length].swapFrom || "",
+                        currentLevelData[currentVocabType][currentQuestionIndex % currentLevelData[currentVocabType].length].swapFrom || "",
                       )
                       .map((part, index, array) => (
                         <span key={index}>
@@ -567,7 +699,7 @@ export default function VocabularyMasteryGame() {
                           {index < array.length - 1 && (
                             <span className="underline bg-yellow-200 px-1 font-bold text-red-600">
                               {
-                                vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length]
+                                currentLevelData[currentVocabType][currentQuestionIndex % currentLevelData[currentVocabType].length]
                                   .swapFrom
                               }
                             </span>
@@ -592,12 +724,12 @@ export default function VocabularyMasteryGame() {
                           : "bg-white text-gray-800 border-gray-300",
                         feedbackType === "correct" &&
                           option ===
-                            vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length].word &&
+                            currentLevelData[currentVocabType][currentQuestionIndex % currentLevelData[currentVocabType].length].word &&
                           "bg-[#4CAF50] text-white",
                         feedbackType === "incorrect" &&
                           option === selectedOption &&
                           option !==
-                            vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length].word &&
+                            currentLevelData[currentVocabType][currentQuestionIndex % currentLevelData[currentVocabType].length].word &&
                           "bg-[#f44336] text-white",
                       )}
                       disabled={!!feedbackMessage}
@@ -621,14 +753,14 @@ export default function VocabularyMasteryGame() {
                   <div className="mt-4 p-4 bg-green-100 rounded-lg border border-green-300">
                     <div className="text-green-800 font-bold mb-2">✅ Perfect! Here's the improved sentence:</div>
                     <div className="text-lg text-green-700">
-                      {vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length]
+                      {currentLevelData[currentVocabType][currentQuestionIndex % currentLevelData[currentVocabType].length]
                         .sentenceAnswer ||
-                        vocabularyData[currentVocabType][
-                          currentQuestionIndex % vocabularyData[currentVocabType].length
+                        currentLevelData[currentVocabType][
+                          currentQuestionIndex % currentLevelData[currentVocabType].length
                         ].sentenceTemplate?.replace(
-                          vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length].swapFrom ||
+                          currentLevelData[currentVocabType][currentQuestionIndex % currentLevelData[currentVocabType].length].swapFrom ||
                             "",
-                          vocabularyData[currentVocabType][currentQuestionIndex % vocabularyData[currentVocabType].length].word,
+                          currentLevelData[currentVocabType][currentQuestionIndex % currentLevelData[currentVocabType].length].word,
                         )}
                     </div>
                   </div>
@@ -688,18 +820,28 @@ export default function VocabularyMasteryGame() {
                     </Button>
                   </a>
 
-                  <div className="mt-6">
+                  <div className="mt-6 flex gap-4 justify-center">
+                    <Button
+                      onClick={() => setShowLevelSelect(true)}
+                      className="rounded-full px-8 py-4 font-bold bg-gradient-to-br from-purple-600 to-blue-600 text-white text-lg"
+                    >
+                      📚 Choose Next Level
+                    </Button>
                     <Button
                       onClick={resetGame}
                       variant="outline"
                       className="rounded-full px-6 py-3 font-bold text-gray-600 border-gray-300 hover:bg-gray-100 bg-transparent"
                     >
-                      🔄 Play Again
+                      🔄 Replay This Level
                     </Button>
                   </div>
                 </div>
               </Card>
             </div>
+          )}
+
+          {/* Close game-content div */}
+          </div>
           )}
 
           <div id="achievements" className="achievements mt-5 flex flex-wrap gap-2">
@@ -712,6 +854,254 @@ export default function VocabularyMasteryGame() {
               </div>
             ))}
           </div>
+
+          {/* Performance Dashboard Modal */}
+          {showPerformance && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+              <Card className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-3xl font-bold text-gray-800">📊 How Are We Doing?</h2>
+                    <Button
+                      onClick={() => setShowPerformance(false)}
+                      variant="outline"
+                      className="rounded-full"
+                    >
+                      ✕
+                    </Button>
+                  </div>
+
+                  {completedLevels.length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-xl text-gray-600 mb-4">No progress yet! Start learning to see your statistics.</p>
+                      <Button
+                        onClick={() => setShowPerformance(false)}
+                        className="rounded-full px-6 py-3 bg-purple-600 text-white"
+                      >
+                        Start Learning
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {/* Overall Stats */}
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
+                          <div className="text-sm text-gray-600">Levels Completed</div>
+                          <div className="text-4xl font-bold text-purple-600">{completedLevels.length}/12</div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {Math.round((completedLevels.length / 12) * 100)}% Complete
+                          </div>
+                        </div>
+                        <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
+                          <div className="text-sm text-gray-600">Words Mastered</div>
+                          <div className="text-4xl font-bold text-blue-600">
+                            {getCumulativeWordCount(Math.max(...completedLevels))}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Out of ~1000 words
+                          </div>
+                        </div>
+                        <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
+                          <div className="text-sm text-gray-600">Comprehension</div>
+                          <div className="text-2xl font-bold text-green-600">
+                            {getCumulativeWordCount(Math.max(...completedLevels)) >= 800 ? '75%+' :
+                             getCumulativeWordCount(Math.max(...completedLevels)) >= 300 ? '65%' :
+                             getCumulativeWordCount(Math.max(...completedLevels)) >= 100 ? '50%' : '33%'}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Of written English
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Progress Message */}
+                      <div className="p-6 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-lg border-2 border-orange-200">
+                        <h3 className="text-xl font-bold text-orange-800 mb-3">🎯 Your Achievement</h3>
+                        <p className="text-lg text-gray-700">
+                          {getComprehensionMessage(getCumulativeWordCount(Math.max(...completedLevels)))}
+                        </p>
+                      </div>
+
+                      {/* Level Breakdown */}
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">📈 Level Progress</h3>
+                        <div className="grid gap-2">
+                          {vocabularyLevels.map((level) => (
+                            <div
+                              key={level.level}
+                              className={cn(
+                                "p-3 rounded-lg flex items-center justify-between",
+                                completedLevels.includes(level.level)
+                                  ? "bg-green-100 border-2 border-green-500"
+                                  : "bg-gray-100 border-2 border-gray-300"
+                              )}
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="text-2xl">
+                                  {completedLevels.includes(level.level) ? "✅" : "⏳"}
+                                </span>
+                                <div>
+                                  <div className="font-bold">Level {level.level}</div>
+                                  <div className="text-sm text-gray-600">{level.totalWords} words</div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-sm font-bold text-gray-700">
+                                  {completedLevels.includes(level.level) ? "Completed" : "Not Started"}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Next Steps */}
+                      <div className="p-6 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg">
+                        <h3 className="text-xl font-bold text-gray-800 mb-3">🚀 Next Steps</h3>
+                        {completedLevels.length === 12 ? (
+                          <p className="text-lg text-gray-700">
+                            🎉 Congratulations! You've mastered all 12 levels! Keep practicing to maintain your skills.
+                          </p>
+                        ) : (
+                          <p className="text-lg text-gray-700">
+                            Continue with Level {getRecommendedLevel(completedLevels)} to keep building your vocabulary!
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* Teacher Materials Modal */}
+          {showTeacherMaterials && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+              <Card className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-3xl font-bold text-gray-800">📚 Teacher Materials</h2>
+                    <Button
+                      onClick={() => {
+                        setShowTeacherMaterials(false)
+                        setIsTeacherAuthenticated(false)
+                        setTeacherPassword("")
+                      }}
+                      variant="outline"
+                      className="rounded-full"
+                    >
+                      ✕
+                    </Button>
+                  </div>
+
+                  {!isTeacherAuthenticated ? (
+                    <div className="text-center py-12">
+                      <div className="max-w-md mx-auto">
+                        <p className="text-lg text-gray-600 mb-6">Please enter the teacher password to access materials</p>
+                        <input
+                          type="password"
+                          value={teacherPassword}
+                          onChange={(e) => setTeacherPassword(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter' && teacherPassword === 'SMPWGary2026') {
+                              setIsTeacherAuthenticated(true)
+                            }
+                          }}
+                          placeholder="Enter password"
+                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg mb-4 text-center text-lg"
+                        />
+                        <Button
+                          onClick={() => {
+                            if (teacherPassword === 'SMPWGary2026') {
+                              setIsTeacherAuthenticated(true)
+                            } else {
+                              alert('Incorrect password')
+                            }
+                          }}
+                          className="rounded-full px-6 py-3 bg-orange-600 text-white text-lg"
+                        >
+                          Access Materials
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <p className="text-gray-700">
+                        Welcome! Download the following materials for classroom use:
+                      </p>
+
+                      {/* Level Tests (1-12) */}
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">📝 Level Tests (Oral Practice)</h3>
+                        <p className="text-sm text-gray-600 mb-3">12 questions each: MCQ, Odd-One-Out, and Missing Word exercises with Bahasa Melayu support</p>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          {vocabularyLevels.map((level) => (
+                            <a
+                              key={level.level}
+                              href={`/teacher-materials/level-${level.level}-test.html`}
+                              download
+                              className="p-3 bg-blue-50 hover:bg-blue-100 border-2 border-blue-200 rounded-lg flex items-center justify-between transition-colors"
+                            >
+                              <span className="font-bold">Level {level.level} Test</span>
+                              <span className="text-blue-600">↓ Download</span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Formal Student Tests */}
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">📋 Formal Student Tests</h3>
+                        <p className="text-sm text-gray-600 mb-3">20-question MCQ tests with marking sheets and spaced retrieval practice</p>
+                        <div className="grid gap-2">
+                          <a
+                            href="/teacher-materials/student-test-levels-1-4.html"
+                            download
+                            className="p-4 bg-green-50 hover:bg-green-100 border-2 border-green-200 rounded-lg flex items-center justify-between transition-colors"
+                          >
+                            <div>
+                              <div className="font-bold">Student Test: Levels 1-4</div>
+                              <div className="text-sm text-gray-600">20 MCQ questions with answer key</div>
+                            </div>
+                            <span className="text-green-600">↓ Download</span>
+                          </a>
+                          <a
+                            href="/teacher-materials/student-test-levels-5-8.html"
+                            download
+                            className="p-4 bg-green-50 hover:bg-green-100 border-2 border-green-200 rounded-lg flex items-center justify-between transition-colors"
+                          >
+                            <div>
+                              <div className="font-bold">Student Test: Levels 5-8</div>
+                              <div className="text-sm text-gray-600">20 MCQ questions with answer key</div>
+                            </div>
+                            <span className="text-green-600">↓ Download</span>
+                          </a>
+                          <a
+                            href="/teacher-materials/student-test-levels-9-12.html"
+                            download
+                            className="p-4 bg-green-50 hover:bg-green-100 border-2 border-green-200 rounded-lg flex items-center justify-between transition-colors"
+                          >
+                            <div>
+                              <div className="font-bold">Student Test: Levels 9-12</div>
+                              <div className="text-sm text-gray-600">20 MCQ questions with answer key</div>
+                            </div>
+                            <span className="text-green-600">↓ Download</span>
+                          </a>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
+                        <p className="text-sm text-gray-700">
+                          <strong>Note:</strong> All materials are designed for classroom use and include Bahasa Melayu translations for L1 support. Print as needed for your students.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
+          )}
         </main>
       </div>
     </div>

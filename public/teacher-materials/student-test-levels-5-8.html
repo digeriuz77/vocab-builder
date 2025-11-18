@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formal Student Test - Levels 5-8</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #000;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            text-transform: uppercase;
+        }
+        .subtitle {
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .student-info {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 2px solid #000;
+        }
+        .info-row {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+        .info-label {
+            font-weight: bold;
+            width: 150px;
+        }
+        .info-line {
+            flex: 1;
+            border-bottom: 1px solid #000;
+            height: 20px;
+        }
+        .instructions {
+            background-color: #f5f5f5;
+            padding: 15px;
+            margin-bottom: 30px;
+            border: 2px solid #000;
+        }
+        .question {
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+        .question-number {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .malay-text {
+            font-style: italic;
+            color: #555;
+            font-size: 13px;
+        }
+        .options {
+            margin-left: 30px;
+            margin-top: 8px;
+        }
+        .option {
+            margin: 5px 0;
+        }
+        .marking-sheet {
+            margin-top: 50px;
+            page-break-before: always;
+        }
+        .marking-header {
+            text-align: center;
+            border-bottom: 3px solid #000;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        .answer-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .answer-item {
+            padding: 10px;
+            border: 1px solid #000;
+            text-align: center;
+        }
+        .answer-number {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .scoring {
+            margin-top: 30px;
+            padding: 20px;
+            border: 2px solid #000;
+        }
+        .score-row {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+        .score-label {
+            font-weight: bold;
+            width: 200px;
+        }
+        .score-line {
+            flex: 1;
+            border-bottom: 1px solid #000;
+            height: 25px;
+        }
+        @media print {
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Vocabulary Builder - Formal Assessment</h1>
+        <div class="subtitle">Levels 5-8 (1000 Most Common English Words)</div>
+        <div class="subtitle">Total: 20 Multiple Choice Questions</div>
+    </div>
+
+    <div class="student-info">
+        <div class="info-row">
+            <div class="info-label">Student Name:</div>
+            <div class="info-line"></div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Class:</div>
+            <div class="info-line"></div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Date:</div>
+            <div class="info-line"></div>
+        </div>
+    </div>
+
+    <div class="instructions">
+        <strong>Instructions:</strong><br>
+        1. Read each question carefully.<br>
+        2. Choose the BEST answer (A, B, C, or D) for each question.<br>
+        3. Write your answer on a separate answer sheet or circle your choice below.<br>
+        4. Each question is worth 5 marks. Total: 100 marks.<br>
+        <br>
+        <strong>Arahan:</strong><br>
+        1. Baca setiap soalan dengan teliti.<br>
+        2. Pilih jawapan TERBAIK (A, B, C, atau D) untuk setiap soalan.<br>
+        3. Tulis jawapan anda pada kertas jawapan yang berasingan atau bulatkan pilihan anda di bawah.<br>
+        4. Setiap soalan bernilai 5 markah. Jumlah: 100 markah.
+    </div>
+
+    
+    <div class="question">
+        <div class="question-number">Question 1:</div>
+        <div>What is the English word for "lama"?</div>
+        <div class="malay-text">Apakah perkataan Inggeris bagi "lama"?</div>
+        <div class="options">
+            <div class="option">A. light</div><div class="option">B. picture</div><div class="option">C. move</div><div class="option">D. long</div>
+        </div>
+    </div>
+    <div class="question">
+        <div class="question-number">Question 2:</div>
+        <div>What is the English word for "jumpa"?</div>
+        <div class="malay-text">Apakah perkataan Inggeris bagi "jumpa"?</div>
+        <div class="options">
+            <div class="option">A. meet</div><div class="option">B. improve</div><div class="option">C. patient</div><div class="option">D. free</div>
+        </div>
+    </div>
+    <div class="question">
+        <div class="question-number">Question 3:</div>
+        <div>What is the English word for "kualiti"?</div>
+        <div class="malay-text">Apakah perkataan Inggeris bagi "kualiti"?</div>
+        <div class="options">
+            <div class="option">A. market</div><div class="option">B. long</div><div class="option">C. option</div><div class="option">D. quality</div>
+        </div>
+    </div>
+    <div class="question">
+        <div class="question-number">Question 4:</div>
+        <div>What is the English word for "idea"?</div>
+        <div class="malay-text">Apakah perkataan Inggeris bagi "idea"?</div>
+        <div class="options">
+            <div class="option">A. national</div><div class="option">B. good</div><div class="option">C. idea</div><div class="option">D. pay</div>
+        </div>
+    </div>
+    <div class="question">
+        <div class="question-number">Question 5:</div>
+        <div>What is the English word for "(tiada terjemahan)"?</div>
+        <div class="malay-text">Apakah perkataan Inggeris bagi "(tiada terjemahan)"?</div>
+        <div class="options">
+            <div class="option">A. machine</div><div class="option">B. now</div><div class="option">C. garden</div><div class="option">D. loss</div>
+        </div>
+    </div>
+    <div class="question">
+        <div class="question-number">Question 6:</div>
+        <div>What is the English word for "senapang"?</div>
+        <div class="malay-text">Apakah perkataan Inggeris bagi "senapang"?</div>
+        <div class="options">
+            <div class="option">A. make</div><div class="option">B. increase</div><div class="option">C. gun</div><div class="option">D. indeed</div>
+        </div>
+    </div>
+    <div class="question">
+        <div class="question-number">Question 7:</div>
+        <div>What is the English word for "gelas"?</div>
+        <div class="malay-text">Apakah perkataan Inggeris bagi "gelas"?</div>
+        <div class="options">
+            <div class="option">A. glass</div><div class="option">B. other</div><div class="option">C. public</div><div class="option">D. office</div>
+        </div>
+    </div>
+    <div class="question">
+        <div class="question-number">Question 8:</div>
+        <div>What is the English word for "tidak pernah"?</div>
+        <div class="malay-text">Apakah perkataan Inggeris bagi "tidak pernah"?</div>
+        <div class="options">
+            <div class="option">A. really</div><div class="option">B. office</div><div class="option">C. mind</div><div class="option">D. never</div>
+        </div>
+    </div>
+    <div class="question">
+        <div class="question-number">Question 9:</div>
+        <div>What is the English word for "(tiada terjemahan)"?</div>
+        <div class="malay-text">Apakah perkataan Inggeris bagi "(tiada terjemahan)"?</div>
+        <div class="options">
+            <div class="option">A. push</div><div class="option">B. level</div><div class="option">C. kitchen</div><div class="option">D. property</div>
+        </div>
+    </div>
+    <div class="question">
+        <div class="question-number">Question 10:</div>
+        <div>What is the English word for "(tiada terjemahan)"?</div>
+        <div class="malay-text">Apakah perkataan Inggeris bagi "(tiada terjemahan)"?</div>
+        <div class="options">
+            <div class="option">A. plant</div><div class="option">B. model</div><div class="option">C. protect</div><div class="option">D. general</div>
+        </div>
+    </div>
+    <div class="question">
+        <div class="question-number">Question 11:</div>
+        <div>What is the English word for "hanya"?</div>
+        <div class="malay-text">Apakah perkataan Inggeris bagi "hanya"?</div>
+        <div class="options">
+            <div class="option">A. occur</div><div class="option">B. recognize</div><div class="option">C. quite</div><div class="option">D. just</div>
+        </div>
+    </div>
+    <div class="question">
+        <div class="question-number">Question 12:</div>
+        <div>What is the English word for "(tiada terjemahan)"?</div>
+        <div class="malay-text">Apakah perkataan Inggeris bagi "(tiada terjemahan)"?</div>
+        <div class="options">
+            <div class="option">A. position</div><div class="option">B. north</div><div class="option">C. play</div><div class="option">D. produce</div>
+        </div>
+    </div>
+    <div class="question">
+        <div class="question-number">Question 13:</div>
+        <div>What is the English word for "dengar"?</div>
+        <div class="malay-text">Apakah perkataan Inggeris bagi "dengar"?</div>
+        <div class="options">
+            <div class="option">A. hear</div><div class="option">B. project</div><div class="option">C. mouth</div><div class="option">D. quite</div>
+        </div>
+    </div>
+    <div class="question">
+        <div class="question-number">Question 14:</div>
+        <div>What is the English word for "(tiada terjemahan)"?</div>
+        <div class="malay-text">Apakah perkataan Inggeris bagi "(tiada terjemahan)"?</div>
+        <div class="options">
+            <div class="option">A. mission</div><div class="option">B. individual</div><div class="option">C. most</div><div class="option">D. head</div>
+        </div>
+    </div>
+    <div class="question">
+        <div class="question-number">Question 15:</div>
+        <div>What is the English word for "garisan"?</div>
+        <div class="malay-text">Apakah perkataan Inggeris bagi "garisan"?</div>
+        <div class="options">
+            <div class="option">A. husband</div><div class="option">B. line</div><div class="option">C. main</div><div class="option">D. page</div>
+        </div>
+    </div>
+    <div class="question">
+        <div class="question-number">Question 16:</div>
+        <div>What is the English word for "harga"?</div>
+        <div class="malay-text">Apakah perkataan Inggeris bagi "harga"?</div>
+        <div class="options">
+            <div class="option">A. problem</div><div class="option">B. price</div><div class="option">C. manager</div><div class="option">D. identify</div>
+        </div>
+    </div>
+    <div class="question">
+        <div class="question-number">Question 17:</div>
+        <div>What is the English word for "(tiada terjemahan)"?</div>
+        <div class="malay-text">Apakah perkataan Inggeris bagi "(tiada terjemahan)"?</div>
+        <div class="options">
+            <div class="option">A. partner</div><div class="option">B. president</div><div class="option">C. production</div><div class="option">D. heart</div>
+        </div>
+    </div>
+    <div class="question">
+        <div class="question-number">Question 18:</div>
+        <div>What is the English word for "(tiada terjemahan)"?</div>
+        <div class="malay-text">Apakah perkataan Inggeris bagi "(tiada terjemahan)"?</div>
+        <div class="options">
+            <div class="option">A. power</div><div class="option">B. race</div><div class="option">C. local</div><div class="option">D. out</div>
+        </div>
+    </div>
+    <div class="question">
+        <div class="question-number">Question 19:</div>
+        <div>What is the English word for "(tiada terjemahan)"?</div>
+        <div class="malay-text">Apakah perkataan Inggeris bagi "(tiada terjemahan)"?</div>
+        <div class="options">
+            <div class="option">A. other</div><div class="option">B. kid</div><div class="option">C. month</div><div class="option">D. middle</div>
+        </div>
+    </div>
+    <div class="question">
+        <div class="question-number">Question 20:</div>
+        <div>What is the English word for "semula jadi"?</div>
+        <div class="malay-text">Apakah perkataan Inggeris bagi "semula jadi"?</div>
+        <div class="options">
+            <div class="option">A. natural</div><div class="option">B. realize</div><div class="option">C. language</div><div class="option">D. protect</div>
+        </div>
+    </div>
+
+    <div class="marking-sheet">
+        <div class="marking-header">
+            <h1>MARKING SHEET / SKEMA PEMARKAHAN</h1>
+            <div class="subtitle">Levels 5-8 - Answer Key / Jawapan</div>
+        </div>
+
+        <div class="answer-grid">
+            
+            <div class="answer-item">
+                <div class="answer-number">Q1</div>
+                <div><strong>D</strong></div>
+                <div style="font-size: 12px;">long</div>
+            </div>
+            <div class="answer-item">
+                <div class="answer-number">Q2</div>
+                <div><strong>A</strong></div>
+                <div style="font-size: 12px;">meet</div>
+            </div>
+            <div class="answer-item">
+                <div class="answer-number">Q3</div>
+                <div><strong>D</strong></div>
+                <div style="font-size: 12px;">quality</div>
+            </div>
+            <div class="answer-item">
+                <div class="answer-number">Q4</div>
+                <div><strong>C</strong></div>
+                <div style="font-size: 12px;">idea</div>
+            </div>
+            <div class="answer-item">
+                <div class="answer-number">Q5</div>
+                <div><strong>D</strong></div>
+                <div style="font-size: 12px;">loss</div>
+            </div>
+            <div class="answer-item">
+                <div class="answer-number">Q6</div>
+                <div><strong>C</strong></div>
+                <div style="font-size: 12px;">gun</div>
+            </div>
+            <div class="answer-item">
+                <div class="answer-number">Q7</div>
+                <div><strong>A</strong></div>
+                <div style="font-size: 12px;">glass</div>
+            </div>
+            <div class="answer-item">
+                <div class="answer-number">Q8</div>
+                <div><strong>D</strong></div>
+                <div style="font-size: 12px;">never</div>
+            </div>
+            <div class="answer-item">
+                <div class="answer-number">Q9</div>
+                <div><strong>D</strong></div>
+                <div style="font-size: 12px;">property</div>
+            </div>
+            <div class="answer-item">
+                <div class="answer-number">Q10</div>
+                <div><strong>C</strong></div>
+                <div style="font-size: 12px;">protect</div>
+            </div>
+            <div class="answer-item">
+                <div class="answer-number">Q11</div>
+                <div><strong>D</strong></div>
+                <div style="font-size: 12px;">just</div>
+            </div>
+            <div class="answer-item">
+                <div class="answer-number">Q12</div>
+                <div><strong>D</strong></div>
+                <div style="font-size: 12px;">produce</div>
+            </div>
+            <div class="answer-item">
+                <div class="answer-number">Q13</div>
+                <div><strong>A</strong></div>
+                <div style="font-size: 12px;">hear</div>
+            </div>
+            <div class="answer-item">
+                <div class="answer-number">Q14</div>
+                <div><strong>A</strong></div>
+                <div style="font-size: 12px;">mission</div>
+            </div>
+            <div class="answer-item">
+                <div class="answer-number">Q15</div>
+                <div><strong>B</strong></div>
+                <div style="font-size: 12px;">line</div>
+            </div>
+            <div class="answer-item">
+                <div class="answer-number">Q16</div>
+                <div><strong>B</strong></div>
+                <div style="font-size: 12px;">price</div>
+            </div>
+            <div class="answer-item">
+                <div class="answer-number">Q17</div>
+                <div><strong>A</strong></div>
+                <div style="font-size: 12px;">partner</div>
+            </div>
+            <div class="answer-item">
+                <div class="answer-number">Q18</div>
+                <div><strong>C</strong></div>
+                <div style="font-size: 12px;">local</div>
+            </div>
+            <div class="answer-item">
+                <div class="answer-number">Q19</div>
+                <div><strong>D</strong></div>
+                <div style="font-size: 12px;">middle</div>
+            </div>
+            <div class="answer-item">
+                <div class="answer-number">Q20</div>
+                <div><strong>A</strong></div>
+                <div style="font-size: 12px;">natural</div>
+            </div>
+        </div>
+
+        <div class="scoring">
+            <h3>Scoring Guide / Panduan Pemarkahan:</h3>
+            <div class="score-row">
+                <div class="score-label">Total Correct / Jumlah Betul:</div>
+                <div class="score-line"></div>
+                <div style="margin-left: 10px;">/ 20</div>
+            </div>
+            <div class="score-row">
+                <div class="score-label">Total Marks / Jumlah Markah:</div>
+                <div class="score-line"></div>
+                <div style="margin-left: 10px;">/ 100</div>
+            </div>
+            <div class="score-row">
+                <div class="score-label">Grade / Gred:</div>
+                <div class="score-line"></div>
+            </div>
+            <br>
+            <div style="font-size: 13px;">
+                <strong>Grading Scale / Skala Gred:</strong><br>
+                A (90-100) | B (80-89) | C (70-79) | D (60-69) | E (50-59) | F (0-49)
+            </div>
+        </div>
+    </div>
+</body>
+</html>
